@@ -1,0 +1,38 @@
+--LogsDNA...
+Signin :
+https://logdna.com/sign-up/
+
+Step 1
+kubectl create secret generic logdna-agent-key --from-literal=logdna-agent-key=0a83ec6a17aab69e0de812410e94b944
+
+Step 2:
+kubectl create -f https://assets.logdna.com/clients/logdna-agent-ds.yaml  
+
+Step 3:
+kubectl get pods
+
+Step 4:
+Logs Monitoring
+Look at Views/Boards and Settings in appsDNA page moment the pod is up.
+
+--------------------------
+Helm by Fluentd
+
+https://github.com/helm/helm/releases
+
+helm version
+Client: &version.Version{SemVer:"v2.16.0", GitCommit:"e13bc94621d4ef666270cfbe734aaabf342a49bb", GitTreeState:"clean"}
+Server: &version.Version{SemVer:"v2.16.0", GitCommit:"e13bc94621d4ef666270cfbe734aaabf342a49bb", GitTreeState:"clean"}
+
+helm install stable/fluentd-elasticsearch
+kubectl get pods
+kubectl get ds
+
+
+helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
+helm repo update
+
+kubectl create ns logging
+
+helm install incubator/elasticsearch --namespace logging --name elasticsearch --set data.terminationGracePeriodSeconds=0
+

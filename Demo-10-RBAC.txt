@@ -1,0 +1,141 @@
+--Authentication with Certificates.
+
+minikube version
+1.6.1
+kubectl api-resources | grep rbac 
+# if you dont see rbac, minikube start --extra-config=apiserver.Authorization.Mode=RBAC
+
+Open GIT BASH
+Step 1
+cd ~
+mkdir cred
+cd cred
+
+Step 2:
+Continue in GITBASH...
+
+openssl genrsa -out api.key 2048
+openssl req -new -key api.key -out api.csr
+cat user01.csr |base64 | tr -d "\n" |clip
+
+notepad cert.yaml
+
+apiVersion: certificates.k8s.io/v1beta1
+kind: CertificateSigningRequest
+metadata:
+  name: api-csr
+spec:
+  groups:
+  - system:authenticated
+ 
+  request: 
+  <<paste the certificate CSR here.. with Contents>>
+  
+  usages:
+  - digital signature
+  - key encipherment
+  - server auth
+  
+
+
+Step 4:
+kubectl create -f cert.yaml
+
+Step 5:
+kubectl get csr
+kubectl certficate approve csr api-csr
+
+Step 6:
+Shift to GIT Bash
+bob.crt is the client certificate to authenticate bob.
+
+kubectl get csr api-csr -o jsonpath='{.status.certificate}'| base64 --decode > bob.crt
+
+Step 7:
+Shift to CMD Prompt
+kubectl config set-credentials bob --client-certificate=bob.crt --client-key=api.key --username "bob"
+
+open Windows explorer, go to .kube/config
+check out users in config file for username bob created?
+
+Step 8:
+Back to CMD Prompt
+
+kubectl create ns eng
+kubectl get ns
+kubectl auth can-i list deployments -n eng
+kubectl auth can-i list deployments -n eng --as bob
+<<Notice bob does not have access to eng>>
+
+Step 9:
+Back to CMD Prompt.
+
+role.txt
+=========
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: lob
+  name: ops-role
+rules:
+- apiGroups: ["extensions", "apps"]
+  resources: ["deployments","pods"]
+  verbs: ["get", "list", "watch", "create", "update"]
+
+Step 10:
+========
+rolebind.txt
+============
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: eng-rolebind
+  namespace: lob
+subjects:
+- kind: User
+  name: bob
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: ops-role
+  apiGroup: rbac.authorization.k8s.io
+
+Step 11:
+
+kubectl auth can-i list deployments -n eng
+kubectl auth can-i list deployments -n eng --as bob
+
+Step 12:
+kubectl create role pod-reader --verb=get --verb=list --verb=watch --resource=pods
+kubectl create rolebinding bob-read-binding --role=pod-reader --user=bob --namespace=lob
+
+Step 13:
+kubectl describe rolebinding bob-adm-binding -n lob
+kubectl describe rolebinding --all-namespaces
+#system-controller ?
+
+Step 14:
+
+kubectl auth can-i list pods -n lob --as bob
+kubectl create rolebinding bob-adm-binding --clusterrole=admin --user=bob --namespace=lob
+
+Step 15:
+To add delete Dynamically:
+kubectl create role delete-reader --verb=delete --resource=pods
+
+kubectl create rolebinding bob-delete-binding --role=delete-reader --user=bob -n lob
+
+kubectl auth can-i delete pods -n lob --as bob
+
+
+
+
+
+
+
+
+
+
+
+
+

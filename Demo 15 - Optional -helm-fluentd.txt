@@ -1,0 +1,37 @@
+Step 1
+Helm Installation:
+Download Helm 2.16.1
+https://github.com/helm/helm/releases
+
+Step 2
+Create Directory Helm
+Extract Helm to Directory
+Open CMD Prompt - run tiller.exe , It will run as Daemon.
+Open CMD Prompt 2
+
+Step 3
+helm init
+helm install --name=redis stable/redis --set serviceType=NodePort
+
+Step 4
+helm repo add elastic https://helm.elastic.co
+helm repo update
+
+Step 5
+helm install elastic/elasticsearch --name elasticsearch --namespace logging \
+--set replicas=1 --set minimumMasterNodes=1 \
+--set volumeClaimTemplate.accessModes[0]=ReadWriteMany \
+--set resources.requests.storage=100Gi
+# wait for Pods to come up
+
+Step 6:
+helm install stable/fluent-bit --name fluent-bit --namespace logging 
+     --set backend.type=es --set backend.es.host=elasticsearch-master
+
+Step 7
+helm install elastic/kibana --name kibana --namespace logging --set ingress.enabled=true -set ingress.hosts[0]=kibana.pv --set service.externalPort=80
+
+Step 8
+kubectl get pods -n logging
+check logs via kubectl logs. 
+

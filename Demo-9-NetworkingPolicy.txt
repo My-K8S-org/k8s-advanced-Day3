@@ -1,0 +1,52 @@
+Step 1:
+minikube version (v1.6.1)
+minikube start --network-plugin=cni
+kubectl create -f https://raw.githubusercontent.com/cilium/cilium/HEAD/examples/kubernetes/1.14/cilium-minikube.yaml
+kubectl get nodes
+kubectl get pods --all-namespaces
+
+Step 2:
+
+kubectl run --generator=run-pod/v1 busybox1 --image=busybox -- sleep 3600
+kubectl run --generator=run-pod/v1 busybox2 --image=busybox -- sleep 3600
+
+Step 3:
+kubectl create deployment demo --image=nginx
+kubectl get deployment
+kubectl expose deployment demo --port=80
+kubectl get services
+kubecl get svc, pod
+
+
+Step 4:
+Policy3.txt:
+===========
+
+kind: NetworkPolicy
+metadata:
+  name: access-nginx
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          access: "true"
+
+kubectl apply -f policy3.txt
+
+Step 5:
+
+kubectl exec -it busybox1 -- sh
+/ # wget --spider --timeout=1 nginx
+   Connecting to nginx (10.111.158.187:80)
+   wget: download timed out
+
+kubectl label pod busybox1 access=true
+
+kubectl exec -it busybox1 -- sh
+/ # wget --spider --timeout=1 nginx
+Connecting to nginx (10.111.158.187:80)
+remote file exists
